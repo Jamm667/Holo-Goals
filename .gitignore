@@ -1,0 +1,14 @@
+# 依赖与构建缓存
+node_modules/
+npm-debug.log*
+package-lock.json
+
+# 免安装版体积 181MB 超过 GitHub 单文件 100MB 限制，不上传
+# 安装包 dist/HOLO-GOALS-Setup-1.0.0.exe (79MB) 会上传
+dist/win-unpacked/
+dist/*.blockmap
+
+# 系统与编辑器
+.DS_Store
+Thumbs.db
+*.swp

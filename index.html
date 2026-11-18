@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>HOLO//GOALS · 全息长期目标矩阵</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <a class="skip-link" href="#goalList">跳至目标列表</a>
+
+  <!-- ============ 背景装饰层 ============ -->
+  <div class="bg-layer" aria-hidden="true">
+    <div class="bg-grid"></div>
+    <div class="bg-glow bg-glow--cyan"></div>
+    <div class="bg-glow bg-glow--magenta"></div>
+    <div class="hex-pattern"></div>
+    <div class="scanline"></div>
+    <div class="noise"></div>
+  </div>
+  <div class="pov-arc" aria-hidden="true"></div>
+  <div class="vignette" aria-hidden="true"></div>
+
+  <!-- 左侧 Word 式目标索引：hover 展开，点击快速定位 -->
+  <nav class="goal-index" id="goalIndex" aria-label="目标快速导航" hidden>
+    <div class="goal-index__grip" aria-hidden="true"><i></i><i></i><i></i></div>
+    <div class="goal-index__cap" data-i18n="index.title">目标索引</div>
+    <ul class="goal-index__list" id="goalIndexList"></ul>
+  </nav>
+  <!-- HUD 左右边缘拉伸弧 -->
+  <div class="hud-arc" aria-hidden="true">
+    <span class="hud-arc__tick"></span><span class="hud-arc__tick"></span>
+    <span class="hud-arc__tick"></span><span class="hud-arc__tick"></span>
+    <span class="hud-arc__tick"></span>
+  </div>
+
+  <!-- ============ 应用主体 ============ -->
+  <div class="app-shell">
+
+    <!-- ===== 顶栏 ===== -->
+    <header class="topbar">
+      <div class="brand">
+        <div class="brand-mark">
+          <svg viewBox="0 0 48 48" aria-hidden="true">
+            <polygon points="24,3 42,13 42,35 24,45 6,35 6,13" fill="none" stroke="currentColor" stroke-width="1.5"/>
+            <polygon points="24,10 36,17 36,31 24,38 12,31 12,17" fill="none" stroke="currentColor" stroke-width="1" opacity=".6"/>
+            <path d="M24 14 V34 M16 19 L32 29 M32 19 L16 29" stroke="currentColor" stroke-width="1.2" opacity=".8"/>
+            <circle cx="24" cy="24" r="3" fill="currentColor"/>
+          </svg>
+        </div>
+        <div class="brand-text">
+          <h1>HOLO<span>//</span>GOALS</h1>
+          <p data-i18n="app.sub">全息长期目标矩阵</p>
+        </div>
+      </div>
+
+      <div class="topbar-stats">
+        <div class="stat-chip">
+          <span class="stat-chip__label" data-i18n="stat.today">今日专注</span>
+          <span class="stat-chip__value" id="statToday">00:00</span>
+        </div>
+        <div class="stat-chip">
+          <span class="stat-chip__label" data-i18n="stat.active">活跃目标</span>
+          <span class="stat-chip__value" id="statActive">0</span>
+        </div>
+        <div class="stat-chip stat-chip--accent">
+          <span class="stat-chip__label" data-i18n="stat.clock">系统时钟</span>
+          <span class="stat-chip__value" id="statClock">--:--:--</span>
+        </div>
+      </div>
+
+      <div class="topbar-actions">
+        <button class="icon-btn" id="btnStats" data-tip-i18n="nav.stats" aria-label="数据统计">
+          <svg viewBox="0 0 24 24"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+        </button>
+        <button class="icon-btn" id="btnExport" data-tip-i18n="nav.export" aria-label="导出备份">
+          <svg viewBox="0 0 24 24"><path d="M12 3v12M7 10l5 5 5-5M4 20h16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+        <button class="icon-btn" id="btnImport" data-tip-i18n="nav.import" aria-label="导入备份">
+          <svg viewBox="0 0 24 24"><path d="M12 16V4M7 9l5-5 5 5M4 20h16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+        <!-- 设置：齿轮图标 -->
+        <button class="icon-btn" id="btnSettings" data-tip-i18n="nav.settings" aria-label="系统设置">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round">
+            <path d="M12 15.3a3.3 3.3 0 1 0 0-6.6 3.3 3.3 0 0 0 0 6.6Z"/>
+            <path d="M19.2 13.4a7.6 7.6 0 0 0 0-2.8l1.8-1.4-1.8-3.1-2.1.9a7.4 7.4 0 0 0-2.4-1.4L14.4 3h-3.6l-.3 1.9a7.4 7.4 0 0 0-2.4 1.4l-2.1-.9-1.8 3.1 1.8 1.4a7.6 7.6 0 0 0 0 2.8l-1.8 1.4 1.8 3.1 2.1-.9a7.4 7.4 0 0 0 2.4 1.4l.3 1.9h3.6l.3-1.9a7.4 7.4 0 0 0 2.4-1.4l2.1.9 1.8-3.1-1.8-1.4Z"/>
+          </svg>
+        </button>
+      </div>
+    </header>
+
+    <!-- ===== 主体 ===== -->
+    <main class="workspace">
+      <!-- 概览 -->
+      <section class="overview" id="overview" aria-label="系统概览">
+        <div class="overview__head">
+          <span class="overline" data-i18n="ov.overline">SYSTEM OVERVIEW // 系统概览</span>
+          <span class="overview__date" id="overviewDate">----/--/--</span>
+        </div>
+        <div class="overview__body">
+          <div class="overview-metric">
+            <span class="overview-metric__num" id="metricGoals">0</span>
+            <span class="overview-metric__label" data-i18n="ov.goals">长期目标</span>
+          </div>
+          <div class="overview-metric">
+            <span class="overview-metric__num" id="metricProjects">0</span>
+            <span class="overview-metric__label" data-i18n="ov.projects">阶段项目</span>
+          </div>
+          <div class="overview-metric">
+            <span class="overview-metric__num" id="metricTasks">0</span>
+            <span class="overview-metric__label" data-i18n="ov.tasks">小目标</span>
+          </div>
+          <div class="overview-metric overview-metric--wide">
+            <span class="overview-metric__label" data-i18n="ov.day">今日总进度</span>
+            <div class="progress-line"><div class="progress-line__fill" id="metricDayBar"></div></div>
+            <span class="overview-metric__sub" id="metricDayText">0 / 0 分钟</span>
+          </div>
+        </div>
+      </section>
+
+      <div class="horizon" aria-hidden="true"></div>
+
+      <!-- 工具条 -->
+      <div class="board-toolbar">
+        <div class="toolbar-left">
+          <span class="overline" data-i18n="tb.overline">GOAL MATRIX // 目标矩阵</span>
+          <span class="toolbar-hint" data-i18n="tb.hint">拖动 ⠿ 排序 · 点击 ▾ 折叠 · 任务状态循环切换</span>
+        </div>
+        <div class="toolbar-right">
+          <button class="ghost-btn" id="btnExpandAll"><span data-i18n="tb.expand">全部展开</span></button>
+          <button class="ghost-btn" id="btnCollapseAll"><span data-i18n="tb.collapse">全部折叠</span></button>
+          <button class="primary-btn primary-btn--lg" id="btnAddGoal">
+            <span class="primary-btn__plus">＋</span><span data-i18n="tb.add">新建长期目标</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- 目标列表 -->
+      <section class="goal-list" id="goalList" aria-live="polite"></section>
+
+      <!-- 归档区 -->
+      <section class="archive" id="archiveSection" hidden>
+        <button class="archive__head" id="archiveToggle" aria-expanded="false">
+          <span class="archive__icon" aria-hidden="true">▣</span>
+          <span class="archive__title" data-i18n="archive.title">归档目标</span>
+          <span class="archive__count" id="archiveCount">0</span>
+          <span class="archive__chev" aria-hidden="true">▾</span>
+        </button>
+        <div class="archive__list" id="archiveList" hidden></div>
+      </section>
+
+      <!-- 最近删除（回收站） -->
+      <section class="trash" id="trashSection" hidden>
+        <button class="trash__head" id="trashToggle" aria-expanded="false">
+          <span class="trash__icon" aria-hidden="true">♲</span>
+          <span class="trash__title" data-i18n="trash.title">最近删除</span>
+          <span class="trash__count" id="trashCount">0</span>
+          <span class="trash__chev" aria-hidden="true">▾</span>
+        </button>
+        <div class="trash__list" id="trashList" hidden></div>
+      </section>
+
+      <!-- 空状态 -->
+      <div class="empty-state" id="emptyState" hidden>
+        <div class="empty-state__hex">
+          <svg viewBox="0 0 120 120" aria-hidden="true">
+            <polygon points="60,8 105,34 105,86 60,112 15,86 15,34" fill="none" stroke="currentColor" stroke-width="1.5" opacity=".7"/>
+            <polygon points="60,24 90,41 90,79 60,96 30,79 30,41" fill="none" stroke="currentColor" stroke-width="1" opacity=".35"/>
+            <path d="M60 38v44M40 49l40 22M80 49L40 71" stroke="currentColor" stroke-width="1.4" opacity=".5"/>
+            <circle cx="60" cy="60" r="5" fill="currentColor"/>
+          </svg>
+        </div>
+        <h2 data-i18n="empty.title">矩阵尚未初始化</h2>
+        <p data-i18n="empty.desc">创建你的第一个长期目标，设定预估周期，开始构建属于你的目标星图。</p>
+        <button class="primary-btn primary-btn--lg" id="btnEmptyAdd">＋ <span data-i18n="empty.add">创建长期目标</span></button>
+      </div>
+    </main>
+
+    <!-- ===== 底部状态栏 ===== -->
+    <footer class="statusbar">
+      <span class="statusbar__item"><i class="dot dot--green"></i> <span data-i18n="status.storage">本地存储已连接</span></span>
+      <span class="statusbar__item" id="saveStatus">数据已同步</span>
+      <span class="statusbar__spacer"></span>
+      <span class="statusbar__item statusbar__hint" data-i18n="status.hint">HOLO//GOALS · 数据仅保存在本机，请定期导出备份</span>
+    </footer>
+  </div>
+
+  <!-- ============ 浮动计时 HUD ============ -->
+  <div class="focus-hud" id="focusHud" hidden>
+    <div class="focus-hud__ring">
+      <svg viewBox="0 0 100 100">
+        <circle class="focus-ring-bg" cx="50" cy="50" r="44" fill="none" stroke-width="4"/>
+        <circle class="focus-ring-fg" id="focusRing" cx="50" cy="50" r="44" fill="none" stroke-width="4" stroke-dasharray="276.46" stroke-dashoffset="0"/>
+      </svg>
+      <div class="focus-hud__time" id="focusTime">25:00</div>
+      <div class="focus-hud__label" id="focusLabel">专注中</div>
+    </div>
+    <div class="focus-hud__info">
+      <span class="focus-hud__goal" id="focusGoal">—</span>
+      <div class="focus-hud__ctrl">
+        <button class="hud-btn" id="btnFocusPause" aria-label="暂停或继续">⏸</button>
+        <button class="hud-btn hud-btn--stop" id="btnFocusStop" aria-label="结束计时">■</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ 模态框：创建/编辑目标 ============ -->
+  <div class="modal-overlay" id="goalModal" hidden>
+    <div class="modal holo-panel">
+      <div class="modal__head">
+        <div><span class="overline" data-i18n="modalGoal.overline">NEW OBJECTIVE // 目标设置</span><h2 id="goalModalTitle">创建长期目标</h2></div>
+        <button class="icon-btn modal__close" data-close="goalModal" aria-label="关闭">✕</button>
+      </div>
+      <div class="modal__body">
+        <label class="field">
+          <span class="field__label"><span data-i18n="modalGoal.name">目标名称</span> <em data-i18n="modalGoal.required">必填</em></span>
+          <input type="text" id="goalTitleInput" class="holo-input holo-input--block" data-i18n-ph="modalGoal.namePh" placeholder="例如：掌握产品设计系统" maxlength="60">
+        </label>
+        <div class="field">
+          <span class="field__label"><span data-i18n="modalGoal.days">预估持续天数</span> <em data-i18n="modalGoal.daysHint">用于效率与剩余天数计算</em></span>
+          <div class="day-chips" id="dayChips" role="group" aria-label="快捷持续天数">
+            <button type="button" data-days="30"><span data-i18n="modalGoal.d30">30 天</span></button>
+            <button type="button" data-days="90" class="is-active"><span data-i18n="modalGoal.d90">90 天</span></button>
+            <button type="button" data-days="180"><span data-i18n="modalGoal.d180">180 天</span></button>
+            <button type="button" data-days="365"><span data-i18n="modalGoal.d365">1 年</span></button>
+          </div>
+          <div class="field__inline">
+            <input type="number" id="goalDaysInput" class="holo-input" min="1" max="3650" value="90" aria-label="预估持续天数">
+            <span data-i18n="modalGoal.dayUnit">天</span>
+          </div>
+        </div>
+        <div class="field-note" data-i18n="modalGoal.note">开始日期将记录为今天；完成每个小目标时会自动记下日期，用于节奏与效率建议。</div>
+      </div>
+      <div class="modal__foot">
+        <button class="ghost-btn" data-close="goalModal"><span data-i18n="modalGoal.cancel">取消</span></button>
+        <button class="primary-btn primary-btn--lg" id="btnGoalSave"><span data-i18n="modalGoal.create">创建目标</span></button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ 模态框：计时后评估 ============ -->
+  <div class="modal-overlay" id="reviewModal" hidden>
+    <div class="modal holo-panel modal--review">
+      <div class="modal__head">
+        <div><span class="overline" data-i18n="review.overline">SESSION REVIEW // 专注复盘</span><h2 data-i18n="review.title">刚刚推进了哪些任务？</h2></div>
+        <button class="icon-btn modal__close" data-close="reviewModal" aria-label="关闭">✕</button>
+      </div>
+      <div class="modal__body" id="reviewBody"></div>
+      <div class="modal__foot">
+        <button class="ghost-btn" data-close="reviewModal"><span data-i18n="review.later">稍后再说</span></button>
+        <button class="primary-btn primary-btn--lg" data-close="reviewModal"><span data-i18n="review.save">保存评估</span></button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ 模态框：数据统计 ============ -->
+  <div class="modal-overlay" id="statsModal" hidden>
+    <div class="modal holo-panel modal--wide">
+      <div class="modal__head">
+        <div><span class="overline" data-i18n="stats.overline">ANALYTICS // 数据分析</span><h2 data-i18n="stats.title">数据统计</h2></div>
+        <button class="icon-btn modal__close" data-close="statsModal" aria-label="关闭">✕</button>
+      </div>
+      <div class="modal__body">
+        <div class="stats-tabs" role="tablist">
+          <button class="stats-tab is-active" data-tab="week" role="tab" aria-selected="true" data-i18n="stats.w7">近 7 天</button>
+          <button class="stats-tab" data-tab="month" role="tab" aria-selected="false" data-i18n="stats.w30">近 30 天</button>
+          <button class="stats-tab" data-tab="goals" role="tab" aria-selected="false" data-i18n="stats.goals">目标分布</button>
+        </div>
+        <div class="chart-wrap"><canvas id="statsChart" width="900" height="380"></canvas></div>
+        <div class="stats-summary" id="statsSummary"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ 模态框：设置 ============ -->
+  <div class="modal-overlay" id="settingsModal" hidden>
+    <div class="modal holo-panel modal--settings">
+      <div class="modal__head">
+        <div><span class="overline" data-i18n="set.overline">CONFIG // 系统配置</span><h2 data-i18n="set.title">设置</h2></div>
+        <button class="icon-btn modal__close" data-close="settingsModal" aria-label="关闭">✕</button>
+      </div>
+      <div class="modal__body settings-body">
+        <div class="settings-section">
+          <div class="settings-section__title" data-i18n="set.language">界面语言 / LANGUAGE</div>
+          <label class="setting-row">
+            <span class="setting-row__label"><span data-i18n="set.langLabel">语言</span><small data-i18n="set.langHint">切换后界面与提示立即更新</small></span>
+            <select id="setLang" class="holo-input holo-input--sm" aria-label="界面语言">
+              <option value="zh">简体中文</option>
+              <option value="en">English</option>
+              <option value="ja">日本語</option>
+            </select>
+          </label>
+        </div>
+        <div class="settings-section">
+          <div class="settings-section__title" data-i18n="set.appearance">外观 · 配色方案</div>
+          <div class="palette-grid" id="paletteGrid" role="group" aria-label="配色方案"></div>
+        </div>
+        <div class="settings-section">
+          <div class="settings-section__title" data-i18n="set.interface">界面 · POV 弧度 / HUD 拉伸</div>
+          <label class="setting-row setting-row--column">
+            <span class="setting-row__label"><span data-i18n="set.pov">弧度强度</span> <small data-i18n="set.povHint">取景器曲线，实时预览</small></span>
+            <span class="slider-row">
+              <input type="range" id="setPov" class="range range--wide" min="0" max="100" step="1" aria-label="POV弧度强度">
+              <output id="povValue" class="slider-value">40%</output>
+            </span>
+          </label>
+        </div>
+        <div class="settings-section">
+          <div class="settings-section__title" data-i18n="set.focus">专注与提醒</div>
+          <label class="setting-row">
+            <span class="setting-row__label"><span data-i18n="set.remindTime">每日提醒时间</span><small data-i18n="set.remindHint">未达成当日目标时提醒</small></span>
+            <input type="time" id="setReminderTime" class="holo-input holo-input--sm">
+          </label>
+          <label class="setting-row">
+            <span class="setting-row__label"><span data-i18n="set.review">计时结束后评估任务</span><small data-i18n="set.reviewHint">弹出面板，拖动或切换任务状态</small></span>
+            <input type="checkbox" id="setReview" class="holo-switch">
+          </label>
+          <label class="setting-row">
+            <span class="setting-row__label" data-i18n="set.sound">专注结束提示音</span>
+            <input type="checkbox" id="setSound" class="holo-switch">
+          </label>
+          <label class="setting-row">
+            <span class="setting-row__label"><span data-i18n="set.notify">桌面通知</span><small data-i18n="set.notifyHint">需授权浏览器通知权限</small></span>
+            <input type="checkbox" id="setNotify" class="holo-switch">
+          </label>
+          <label class="setting-row">
+            <span class="setting-row__label" data-i18n="set.defaultMin">默认专注时长（分钟）</span>
+            <input type="number" id="setDefaultMinutes" min="1" max="180" class="holo-input holo-input--sm">
+          </label>
+        </div>
+        <div class="settings-section">
+          <div class="settings-section__title settings-section__title--danger" data-i18n="set.data">数据</div>
+          <div class="setting-row setting-row--danger">
+            <span class="setting-row__label"><span data-i18n="set.clear">清空所有数据</span><small data-i18n="set.clearHint">不可恢复，请先导出备份</small></span>
+            <button class="danger-btn" id="btnClearAll" data-i18n="set.clearBtn">清空数据</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ 风格化二次确认弹窗 ============ -->
+  <div class="modal-overlay" id="confirmModal" hidden>
+    <div class="modal modal--confirm holo-panel" role="alertdialog" aria-labelledby="confirmTitle" aria-describedby="confirmMessage">
+      <div class="confirm-glyph" aria-hidden="true">
+        <svg viewBox="0 0 64 64">
+          <polygon points="32,4 58,18 58,46 32,60 6,46 6,18" fill="none" stroke="currentColor" stroke-width="1.5"/>
+          <polygon points="32,12 51,22 51,42 32,52 13,42 13,22" fill="none" stroke="currentColor" stroke-width="1" opacity=".4"/>
+          <path d="M32 22v14M32 42v2" stroke="currentColor" stroke-width="3" stroke-linecap="round"/>
+        </svg>
+      </div>
+      <div class="confirm-content">
+        <span class="overline" id="confirmEyebrow">CONFIRM // 二次确认</span>
+        <h2 id="confirmTitle">确认操作</h2>
+        <p id="confirmMessage">此操作不可撤销。</p>
+      </div>
+      <div class="confirm-actions">
+        <button class="ghost-btn" id="confirmCancel">取消</button>
+        <button class="danger-btn" id="confirmOk">确认</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ 提示容器 ============ -->
+  <div class="toast-container" id="toastContainer"></div>
+
+  <input type="file" id="importFile" accept="application/json,.json" hidden>
+  <script src="app.js"></script>
+</body>
+</html>

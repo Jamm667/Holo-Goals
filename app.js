@@ -1027,7 +1027,9 @@
   /* ============================================================
      计时与复盘
      ============================================================ */
-  let F={active:false,goalId:null,mode:'countdown',total:0,remain:0,elapsed:0,paused:false,tick:null};
+  // 计时基于真实时间戳：浏览器/Electron 在窗口失焦时会节流 setInterval，
+  // 若靠 tick 次数递减会走慢。定时器只刷新 UI，时间差用 Date.now() 结算。
+  let F={active:false,goalId:null,mode:'countdown',total:0,remain:0,elapsed:0,anchorAt:0,paused:false,tick:null};
   let audioCtx=null;
   function beep(){
     if(!S.settings.sound) return;
@@ -1043,25 +1045,42 @@
       });
     }catch(e){}
   }
+  // 用真实时钟结算自上次锚点以来的秒数（暂停时不结算）
+  function settleFocusClock(){
+    if(!F.active || F.paused) return;
+    const now=Date.now();
+    const delta=Math.max(0,(now-F.anchorAt)/1000);
+    F.anchorAt=now;
+    if(F.mode==='countdown') F.remain=Math.max(0,F.remain-delta);
+    else F.elapsed+=delta;
+  }
+  function focusTick(){
+    if(!F.active) return;
+    settleFocusClock();
+    if(F.mode==='countdown' && F.remain<=0){ finishFocus(F.total/60,t('toast.focusDone')); return; }
+    updateFocusHUD();
+  }
   function startFocus(id){
     if(F.active){toast(t('toast.alreadyFocus'),'warn');return;}
     const g=findGoal(id); if(!g) return;
+    const mins=S.settings.defaultMin||25;
     Object.assign(F,{active:true,goalId:id,mode:g._mode||'countdown',paused:false,
-      total:(S.settings.defaultMin||25)*60,remain:(S.settings.defaultMin||25)*60,elapsed:0});
+      total:mins*60,remain:mins*60,elapsed:0,anchorAt:Date.now()});
     $('#focusHud').hidden=false;
     $('.hud-arc')?.classList.add('is-active');
     $('#focusLabel').textContent=F.mode==='countdown'?t('goal.countdown'):t('goal.stopwatch');
     $('#focusGoal').textContent=g.title; $('#btnFocusPause').textContent='⏸';
-    F.tick=setInterval(()=>{
-      if(F.paused) return;
-      if(F.mode==='countdown'){ F.remain--; if(F.remain<=0){finishFocus(F.total/60,t('toast.focusDone'));return;} }
-      else F.elapsed++;
-      updateFocusHUD();
-    },1000);
+    clearInterval(F.tick);
+    F.tick=setInterval(focusTick,250); // 更密的前台刷新；后台被节流也不影响准确性
+    // 切回窗口/标签页可见时立即结算，避免节流期间显示滞后
     updateFocusHUD(); toast(t('toast.focusStart',{g:esc(g.title)}));
   }
+  // 窗口重新获得焦点 / 标签页重新可见时补算
+  window.addEventListener('focus', ()=>{ if(F.active) focusTick(); });
+  document.addEventListener('visibilitychange', ()=>{ if(!document.hidden && F.active) focusTick(); });
   function updateFocusHUD(){
     if(!F.active) return;
+    settleFocusClock();
     const sec=F.mode==='countdown'?F.remain:F.elapsed, g=findGoal(F.goalId);
     $('#focusTime').textContent=fmtClock(sec);
     const denom=F.mode==='countdown'?F.total:Math.max((g?.dailyTarget||120)*60,1);
@@ -1078,12 +1097,17 @@
     if(S.settings.review && g) openReview(g,min);
   }
   $('#btnFocusPause').addEventListener('click',()=>{
-    if(!F.active) return; F.paused=!F.paused;
+    if(!F.active) return;
+    if(!F.paused) settleFocusClock(); // 暂停前先把已过时间结算进去
+    F.paused=!F.paused;
+    if(!F.paused) F.anchorAt=Date.now(); // 继续时重置锚点，暂停时长不计时
     $('#btnFocusPause').textContent=F.paused?'▶':'⏸';
     $('#focusLabel').textContent=F.paused?t('status.doing'):(F.mode==='countdown'?t('goal.countdown'):t('goal.stopwatch'));
+    updateFocusHUD();
   });
   $('#btnFocusStop').addEventListener('click',()=>{
     if(!F.active) return;
+    settleFocusClock();
     const min=F.mode==='countdown'?(F.total-F.remain)/60:F.elapsed/60;
     if(min<.05){stopFocusInterval();toast(t('toast.tooShort'),'warn');return;}
     finishFocus(min,t('toast.focusStop'));
